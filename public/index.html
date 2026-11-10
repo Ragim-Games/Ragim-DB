@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https: http://localhost:10000 http://127.0.0.1:10000; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'">
+  <title>Ragim DB · Console</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="./"><span class="brand-icon">R</span> Ragim <b>DB</b><span class="version">01</span></a>
+    <div class="workspace-label">PERSONAL WORKSPACE</div>
+    <div class="workspace"><span class="avatar">RG</span><div>Ragim Games<small>Private database console</small></div><span class="lock">◆</span></div>
+    <nav aria-label="주 메뉴"><button id="nav-databases" class="nav-item active"><span>▤</span> Databases <span id="nav-count" class="pill">—</span></button><button id="nav-api" class="nav-item"><span>⌘</span> API reference <span>↗</span></button></nav>
+    <div class="sidebar-note"><span class="tiny-label">STORAGE ENGINE</span><strong>Built on Discord.</strong><p>채널 하나, 데이터베이스 하나.<br>모든 기록을 텍스트로.</p><div class="engine"><i></i> Discord REST API v10</div></div>
+    <div class="sidebar-bottom"><span class="avatar small">R</span><div>Administrator<small>Owner access</small></div><button id="logout" title="잠금" aria-label="관리자 세션 잠금">↪</button></div>
+  </aside>
+  <main>
+    <header class="topbar"><div>Workspace <span>/</span> <strong>Databases</strong></div><span class="private-tag">◆ Private console</span></header>
+    <div class="content">
+      <div class="heading"><div><div class="eyebrow">YOUR DATA, YOUR SPACE</div><h1>Databases<span>.</span></h1><p>Discord에 저장하고, 여기서 관리하세요.</p></div><button class="button primary" id="create-db" disabled><span>＋</span> 새 데이터베이스</button></div>
+      <section class="stats" aria-label="서버 상태">
+        <article><span class="tiny-label">TOTAL DATABASES</span><strong id="stat-count">—<small> databases</small></strong><p>지정 카테고리의 Ragim DB</p></article>
+        <article><span class="tiny-label">CONNECTION</span><strong class="status-value"><i id="status-dot"></i><span id="stat-status">연결 전</span></strong><p id="stat-description">관리자 키로 연결하세요</p></article>
+        <article><span class="tiny-label">STORAGE FORMAT</span><strong>Text<span class="format-badge">ONLY</span></strong><p>JSON 텍스트 · 레코드별 메시지</p></article>
+      </section>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <section class="connection" id="connection-panel">
+        <div><span class="section-marker">01 / CONNECT</span><h2>관리자 콘솔 연결</h2><p>발급받은 관리자 키를 입력하세요. 키는 현재 탭의 메모리에만 유지됩니다.</p></div>
+        <form id="connect-form"><label>API 서버 주소<input id="api-url" type="url" placeholder="https://your-service.onrender.com" required autocomplete="url"></label><label>관리자 키<input id="admin-key" type="password" placeholder="rg_admin_…" required autocomplete="off" spellcheck="false"></label><button class="button primary" type="submit">연결하기 <span>→</span></button></form>
+        <small>Render 무료 서버는 절전 후 첫 연결에 약 1분이 걸릴 수 있습니다.</small>
+      </section>
+      <section class="db-section" id="db-section">
+        <div class="section-top"><div><h2>내 데이터베이스 <span id="list-count">0</span></h2><p>데이터베이스를 선택해 텍스트 기록을 관리하세요.</p></div><button class="button subtle" id="refresh" disabled>↻ 새로고침</button></div>
+        <div class="table-top"><span>NAME / CHANNEL</span><span>FORMAT</span><span>ACCESS</span></div>
+        <div id="db-list"><div class="empty"><div class="empty-icon">▤</div><h3>데이터가 머무를 공간</h3><p>콘솔에 연결하면 데이터베이스가 여기에 표시됩니다.</p><span class="text-link">Discord channels → Ragim databases</span></div></div>
+      </section>
+      <section id="records-panel" class="records-panel" hidden>
+        <div class="section-top"><div><span class="section-marker">RECORD EXPLORER</span><h2 id="record-heading"></h2><code id="db-id"></code></div><div class="actions"><button id="export-db" class="button subtle">내보내기</button><button id="rename-db" class="button subtle">이름 변경</button><button id="delete-db" class="button danger">DB 삭제</button></div></div>
+        <form id="record-form"><label for="record-text" id="editor-label">새 텍스트 레코드</label><textarea id="record-text" rows="5" placeholder='텍스트 또는 JSON 문자열을 입력하세요.' required></textarea><div class="editor-bottom"><span id="text-length">포장 포함 21 / 2,000</span><div class="actions"><button type="button" id="cancel-edit" class="button subtle" hidden>수정 취소</button><button class="button primary" type="submit" id="save-record">레코드 저장 ↗</button></div></div></form>
+        <div id="records-list"></div><button id="load-more" class="button subtle" hidden>이전 기록 불러오기</button>
+      </section>
+      <section class="api-section" id="api-section"><div><span class="section-marker">DEVELOPER ACCESS</span><h2>앱에서 바로 연결하세요.</h2><p>일반 API 키로 레코드를 읽고 쓰세요. DB 생성·삭제는 관리자만 가능합니다.</p></div><pre><code id="api-example">GET /v1/databases
+Authorization: Bearer YOUR_RAGIM_API_KEY</code></pre><a href="https://github.com/Ragim-Games/Ragim-DB#api" target="_blank" rel="noopener noreferrer">API 문서 보기 ↗</a></section>
+      <footer><span>RAGIM DB <span class="footer-dot">/</span> Personal infrastructure</span><span>Text in. Possibilities out.</span></footer>
+    </div>
+  </main>
+  <dialog id="name-dialog"><form id="name-form"><span class="section-marker">DATABASE</span><h2 id="name-title">새 데이터베이스</h2><p id="name-description">지정 카테고리에 비공개 채널과 웹훅을 만듭니다.</p><label>데이터베이스 이름<input id="db-name" required maxlength="50" placeholder="my-database" autocomplete="off"></label><div class="dialog-actions"><button class="button subtle" type="button" id="cancel-name">취소</button><button class="button primary" type="submit">확인</button></div></form></dialog>
+</body>
+</html>

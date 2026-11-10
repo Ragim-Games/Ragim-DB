@@ -1,0 +1,13 @@
+{
+  "name": "ragim-db",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "test": "node --test test/*.test.mjs",
+    "keys": "node scripts/generate-keys.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs"
+  }
+}
