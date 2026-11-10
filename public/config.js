@@ -1,2 +1,2 @@
 // Public service address only. Never place any key or Discord token here.
-window.RAGIM_CONFIG = { apiBase: '' };
+window.RAGIM_CONFIG = { apiBase: 'https://ragim-db-api.onrender.com' };
