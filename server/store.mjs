@@ -1,6 +1,8 @@
 import { AppError, SerialQueue } from './discord.mjs';
 const TOPIC = 'ragim-db:v1';
 const WEBHOOK = 'Ragim DB';
+// Voice/stage counters use the channel name; text/announcement counters use a message.
+const COUNTER_TYPES = [0, 2, 5, 13];
 const noMentions = { parse: [], users: [], roles: [], replied_user: false };
 export function validId(id) {
   if (!/^\d{17,20}$/.test(id || '')) throw new AppError(400, 'INVALID_ID', '올바른 Discord ID가 필요합니다.');
@@ -38,13 +40,13 @@ export class DiscordStore {
     await this.identity();
     const category = await this.client.request('GET', `/channels/${this.config.category}`);
     const counter = await this.client.request('GET', `/channels/${this.config.counter}`);
-    if (category.guild_id !== this.config.guild || category.type !== 4 || counter.guild_id !== this.config.guild || counter.type !== 0) {
+    if (category.guild_id !== this.config.guild || category.type !== 4 || counter.guild_id !== this.config.guild || !COUNTER_TYPES.includes(counter.type)) {
       throw new AppError(503, 'INVALID_CHANNEL_SETUP', '카테고리와 카운터 채널이 지정 서버에 있는지 확인하세요.');
     }
   }
   async list() {
     const channels = await this.client.request('GET', `/guilds/${this.config.guild}/channels`);
-    return channels.filter(c => c.type === 0 && c.parent_id === this.config.category && c.topic === TOPIC).map(publicDb);
+    return channels.filter(c => c.id !== this.config.counter && c.type === 0 && c.parent_id === this.config.category && c.topic === TOPIC).map(publicDb);
   }
   async database(id) {
     validId(id);
@@ -139,8 +141,14 @@ export class DiscordStore {
   async syncCounter() {
     const bot = await this.identity();
     const channel = await this.client.request('GET', `/channels/${this.config.counter}`);
-    if (channel.guild_id !== this.config.guild || channel.type !== 0) throw new AppError(503, 'INVALID_COUNTER', '카운터 채널 설정을 확인하세요.');
+    if (channel.guild_id !== this.config.guild || !COUNTER_TYPES.includes(channel.type)) throw new AppError(503, 'INVALID_COUNTER', '카운터 채널 설정을 확인하세요.');
     const content = `db: ${(await this.list()).length}`;
+    if (channel.type === 2 || channel.type === 13) {
+      if (channel.name !== content) await this.client.request('PATCH', `/channels/${this.config.counter}`, { name: content });
+      this.counterId = null;
+      this.counterState = { synced: true, lastSyncedAt: new Date().toISOString(), error: null };
+      return this.counterState;
+    }
     let existing;
     if (this.counterId) {
       try { existing = await this.client.request('GET', `/channels/${this.config.counter}/messages/${this.counterId}`); }

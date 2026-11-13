@@ -146,3 +146,18 @@ test('Discord 429 retry honors delay; secrets and webhook URL are never leaked i
   await assert.rejects(bad.request('GET', '/users/@me'), error => error.code === 'DISCORD_UNREACHABLE' && !error.message.includes('secret'));
 });
 test('queue survives rejected work', async () => { const q = new SerialQueue(); await assert.rejects(q.run(() => { throw new Error('fail'); })); assert.equal(await q.run(() => 42), 42); assert.equal(q.pending, 0); });
+
+test('voice counter renames the channel, avoids messages and redundant writes, and recovers on restart', async () => {
+  const fake = new FakeDiscord(), store = new DiscordStore(fake, config);
+  Object.assign(fake.channels.get(config.counter), { type: 2, name: 'db: 0' });
+  const created = await store.create('voice-check');
+  assert.equal(created.counter.synced, true);
+  assert.equal(fake.channels.get(config.counter).name, 'db: 1');
+  assert.equal(fake.calls.some(c => c.path.includes(`/channels/${config.counter}/messages`)), false);
+  const writesBefore = fake.calls.filter(c => c.method === 'PATCH' && c.path === `/channels/${config.counter}`).length;
+  const restarted = new DiscordStore(fake, config);
+  await restarted.reconcile();
+  assert.equal(fake.calls.filter(c => c.method === 'PATCH' && c.path === `/channels/${config.counter}`).length, writesBefore);
+  await restarted.remove(created.database.id, 'voice-check');
+  assert.equal(fake.channels.get(config.counter).name, 'db: 0');
+});
